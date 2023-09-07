@@ -413,5 +413,5 @@ def RFM_grid_search(df1, df2, year, month):
     roc_auc = roc_auc_score(y_test, probas[:, 1]) 
     print('Accuracy Score: ', accuracy, 'Precision Score: ', precision, "Recall Score: ", recall, 'F1-Score: ', f1_score_result, "AUC Score: ", roc_auc)
 
-    return final_model, best_params, validation_accuracy, importance_df, cm_list, accuracy, precision, recall, f1_score_result, roc_auc
+    return final_model, best_params, validation_accuracy, importance_df, confusion_matrix_list, accuracy, precision, recall, f1_score_result, roc_auc
 
