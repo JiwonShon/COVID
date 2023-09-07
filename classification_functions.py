@@ -296,7 +296,7 @@ def RFM_without_validation(df1, df2, year, month):
     return accuracy_test_n
 
 
-def RFM_grid_search(df1, df2):
+def RFM_grid_search(df1, df2, year, month):
     '''
     Description: Train a Random Forest Classification model with GridSearchCV for hyperparameter tuning. It trains on 'df1', validates on 'df2', and tests on 'df3'.
     Input:   Three pivot data frames obtained from the 'pivot_converter_ver1' function. 
