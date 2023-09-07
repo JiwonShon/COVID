@@ -6,6 +6,7 @@ def extract_data_ver1(df, year, month):
     Output:  previous_three_months: The training data set, consisting of data from the previous three months.
              following_three_months: The test data set, containing data from following three months.
     '''
+    import pandas as pd
     # set the start- and end-month
     start_date = pd.to_datetime(f"{year}-{month:02d}", format="%Y-%m")
     end_date = start_date + pd.DateOffset(months=1)
@@ -28,6 +29,7 @@ def extract_data_ver2(df, year, month):
              following_first_month: The validation data set, comprising data from the first following month.
              after_two_months: The test data set, containing data from two months ahead.
     '''
+    import pandas as pd
     # set the start- and end-month
     start_date = pd.to_datetime(f"{year}-{month:02d}", format="%Y-%m")
     end_date = start_date + pd.DateOffset(months=1)
@@ -48,7 +50,7 @@ def extract_data_ver2(df, year, month):
     print('================ End of Extract data sets (3sets) for pivot table =================')
     return previous_three_months, following_first_month, after_two_month
 
-def pivot_converter_ver1(previous_three_months, following_three_months):
+def pivot_converter_ver1(previous_three_months, following_three_months, df):
     '''
     Description: This function is designed to pivot a data frame for immediate use in a model.
                 you can apply this train_pivot to training model, and test_pivot to separate into validation and test.
@@ -57,8 +59,8 @@ def pivot_converter_ver1(previous_three_months, following_three_months):
              test_pivot: Feature-values with labels (survival) for testing the model.
              feature_train_count: Count of features, including train_pivot.
              feature_test_count: Count of features, including test_pivot.
-
     '''
+    import pandas as pd
     # Assign a 'purpose' column to indicate the dataset purpose
     previous_three_months.loc[:,'purpose'] = 'training'
     following_three_months.loc[:,'purpose'] = 'test'
@@ -129,9 +131,8 @@ def pivot_converter_ver2(previous_three_months, following_first_month, after_two
              feature_train_count: Count of features, including train_pivot.
              features_val_count: Count of features, including val_pivot.
              feature_test_count: Count of features, including test_pivot.
-
     '''
-    
+    import pandas as pd
     # Assign a 'purpose' column to indicate the dataset purpose
     previous_three_months.loc[:,'purpose'] = 'training'
     following_first_month.loc[:,'purpose'] = 'validation'
@@ -198,7 +199,7 @@ def pivot_converter_ver2(previous_three_months, following_first_month, after_two
     print('================ End of Pivot data (3sets) =================')  
     return train_pivot, val_pivot, test_pivot, feature_train_count, features_val_count, feature_test_count
 
-def pivot_converter_ver3(previous_three_months, following_three_months):
+def pivot_converter_ver3(previous_three_months, following_three_months, df):
     '''
     Description: This function is designed to pivot a data frame for immediate use in a model.
                 you can apply this train_pivot to training model, and test_pivot to separate into validation and test.
@@ -209,6 +210,7 @@ def pivot_converter_ver3(previous_three_months, following_three_months):
              feature_train_count: Count of features, including train_pivot.
              feature_test_count: Count of features, including test_pivot.
     '''
+    import pandas as pd
     # Assign a 'purpose' column to indicate the dataset purpose
     previous_three_months.loc[:,'purpose'] = 'train'
     following_three_months.loc[:,'purpose'] = 'test'
@@ -306,10 +308,12 @@ def RFM_grid_search(df1, df2, year, month):
             validation_accuracy: Accuracy score of the final model on the validation data.
     '''
     import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
     from sklearn.model_selection import train_test_split
     from sklearn.model_selection import GridSearchCV
     from sklearn.ensemble import RandomForestClassifier
-    from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, roc_curve
+    from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, roc_curve, classification_report
 
 
     # Define the parameter grid
