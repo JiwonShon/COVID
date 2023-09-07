@@ -34,16 +34,10 @@ df=df_merged.copy()
 # Convert the 'date' column to Timestamp type
 df['date']=pd.to_datetime(df['date'], format='mixed')
 
-
-# Create an empty DataFrame with desired columns
-accuracy_df = pd.DataFrame(columns=['year', 'month', 'train(samples)','test(samples)', 'train_features(used)', 'test_features', 'label[0]_counts', 'label[1]_counts','defulat_score', 'best_param','best_score', 'best_param_score'])
-# evaluation
-eval_df = pd.DataFrame(columns=['year', 'month', 'train(samples)','test(samples)', 'train_features(used)', 'hos_counts', 'dec_counts', 'cm_TN','cm_FP','cm_FN','cm_TP', 'accuracy', 'precision', 'recall', 'F1-Score', 'AUC_score'])
+# Create an empty DataFrame for evaluation metrics
+eval_df = pd.DataFrame(columns=['year', 'month', 'train_samples', 'validation_samples', 'test_samples', 'train_features_used', 'hospitalized_counts(0)', 'death_counts(1)', 'accuracy_non_val', 'best_param', 'confusion_matrix_TN', 'confusion_matrix_FP', 'confusion_matrix_FN', 'confusion_matrix_TP', 'accuracy', 'precision', 'recall', 'F1-Score', 'AUC_score'])
+# Create an empty DataFrame to store feature importance values
 feature_impt = pd.DataFrame([])
-
-
-
-
 
 
 
