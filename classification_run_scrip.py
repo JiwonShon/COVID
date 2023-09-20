@@ -1,36 +1,38 @@
 import sys
+import pandas as pd
+import numpy as np
+from collections import Counter
+from classification_functions import extract_data_ver1, pivot_converter_ver1, RFM_without_validation, RFM_grid_search, year_month_column
 
-# Create the output file and save all printed output
+
+# Creat the output file and save all printed command 
 class OutputLogger:
     def __init__(self, filename):
         self.file = open(filename, 'w')
         self.stdout = sys.stdout
 
     def write(self, message):
-        # Write the message to both the file and the standard output
         self.file.write(message)
         self.stdout.write(message)
 
     def flush(self):
-        pass  # No need to flush the custom logger
-
-# Specify the path and file name for the log file
-log_path = "/path/to/logs"
-log_file_name = "output_log"
+        pass
+        # self.file.flush()
+        # self.stdout.flush()
 
 # Create an instance of the OutputLogger class with the specified log file name
-logger = OutputLogger(f'{log_path}/{log_file_name}.txt')
+logger = OutputLogger('/mnt/NAS4/home/jiwon/classification_model/result/20230915_RFM/20230915_log_normal.txt')
 
 # Redirect the standard output to the custom logger
 sys.stdout = logger
 
 # ====================================== running script!! ====================================== #
-import pandas as pd
-import numpy as np
-from collections import Counter
 
-df_merged = pd.read_csv('data/df.csv')
+df_merged = pd.read_csv('/mnt/NAS4/home/jiwon/classification_model/jupyter/data/df_all_230829.csv')
 df=df_merged.copy()
+df['survival'] = np.where(df['status'] == 'hospitalized', 0, 1)  # deceased 가 event가 일어난거니까 1임
+
+print(df['status'].value_counts())
 # Convert the 'date' column to Timestamp type
 df['date']=pd.to_datetime(df['date'], format='mixed')
 
@@ -63,7 +65,7 @@ for year in range(2020, 2023):
             print("*** ===== Start!", year, month, previous_data.shape, following_data.shape, end='\n')
 
             # Transform data frame into pivot style
-            train_pivot, test_pivot, feature_train_count, feature_test_count = pivot_converter_ver1(previous_data, following_data) 
+            train_pivot, test_pivot, feature_train_count, feature_test_count = pivot_converter_ver1(previous_data, following_data, df) 
             train_shape = train_pivot.shape
             test_shape = test_pivot.shape
 
@@ -96,7 +98,7 @@ for year in range(2020, 2023):
             else:
                 feature_impt = pd.merge(feature_impt, importance_df, on='Feature', how='outer')
 
-    elif year == 2021:
+    elif year in [2021,2022]:
         for month in range(1, 13):
             # Extract data for the specified year and month
             previous_data, following_data = extract_data_ver1(df, year, month)
@@ -112,7 +114,7 @@ for year in range(2020, 2023):
             print("*** ===== Start!", year, month, previous_data.shape, following_data.shape, end='\n')
 
             # Transform data frame into pivot style
-            train_pivot, test_pivot, feature_train_count, feature_test_count = pivot_converter_ver1(previous_data, following_data) 
+            train_pivot, test_pivot, feature_train_count, feature_test_count = pivot_converter_ver1(previous_data, following_data,df) 
             train_shape = train_pivot.shape
             test_shape = test_pivot.shape
 
@@ -142,8 +144,8 @@ for year in range(2020, 2023):
             # Store feature importance data
             feature_impt = pd.merge(feature_impt, importance_df, on='Feature', how='outer')
 
-    elif year == 2022:
-        for month in range(1, 10):
+    elif year == 2023:
+        for month in range(1, 8):
             # Extract data for the specified year and month
             previous_data, following_data = extract_data_ver1(df, year, month)
             
@@ -158,7 +160,7 @@ for year in range(2020, 2023):
             print("*** ===== Start!", year, month, previous_data.shape, following_data.shape, end='\n')
 
             # Transform data frame into pivot style
-            train_pivot, test_pivot, feature_train_count, feature_test_count = pivot_converter_ver1(previous_data, following_data) 
+            train_pivot, test_pivot, feature_train_count, feature_test_count = pivot_converter_ver1(previous_data, following_data,df) 
             train_shape = train_pivot.shape
             test_shape = test_pivot.shape
 
@@ -188,9 +190,9 @@ for year in range(2020, 2023):
             # Store feature importance data
             feature_impt = pd.merge(feature_impt, importance_df, on='Feature', how='outer')
 
-eval_df.loc[:,'motality']=eval_df['dec_counts']/(eval_df['hos_counts']+eval_df['dec_counts'])
-eval_df.to_csv('/FM_window_evaluation_date.csv')
-feature_impt.to_csv('/RFM_feature_impt_date.csv')
+eval_df = year_month_column(eval_df)
+eval_df.to_csv('/mnt/NAS4/home/jiwon/classification_model/result/20230915_RFM/RFM_evaluation_normal.csv')
+feature_impt.to_csv('/mnt/NAS4/home/jiwon/classification_model/result/20230915_RFM/RFM_feature_impt_normal.csv')
 
 
 # At the end of your code execution, close the output file
