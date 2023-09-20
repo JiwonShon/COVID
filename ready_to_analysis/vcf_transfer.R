@@ -60,10 +60,10 @@ Hospitalized_mod <-ddply(Hospitalized_mod,'gisaid_epi_isl',function(X) {
   substitutions_str <-unlist(strsplit(X$substitutions,split=','))
   d <-data.frame(substitution=substitutions_str,
                  stringsAsFactors = F) %>%
-    mutate(position=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\2",substitution),
-           ref_base=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\1",substitution),
-           alt_base=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\3",substitution)) %>%
-    mutate(chk=substitution==paste0(ref_base,position,alt_base))
+    mutate(pos=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\2",substitution),
+           ref=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\1",substitution),
+           mut=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\3",substitution)) %>%
+    mutate(chk=substitution==paste0(ref,pos,mut))
   stopifnot(all(d$chk))
   d <-d %>% select(-chk)
   stopifnot(all(!duplicated(d$position)))
@@ -74,12 +74,10 @@ Hospitalized_mod <-ddply(Hospitalized_mod,'gisaid_epi_isl',function(X) {
 
 # [1] "gisaid_epi_isl" "date"           "clade_who"      "status"         "substitution"  
 # [6] "position"       "ref_base"       "alt_base"  
-# colnames(Hospitalized_mod)[which(names(Hospitalized_mod) == "gisaid_epi_isl")] <- 'sampleID'
-# colnames(Hospitalized_mod)[which(names(Hospitalized_mod) == "pos")] <- 'position'
-# colnames(Hospitalized_mod)[which(names(Hospitalized_mod) == "ref")] <- 'ref_base'
-# colnames(Hospitalized_mod)[which(names(Hospitalized_mod) == "mut")] <- 'alt_base'
-# 
-# colnames(Hospitalized_mod)[which(names(Hospitalized_mod) == "sampleID")] <- 'gisaid_epi_isl'
+# colnames(Hospitalized_mod)[which(names(Hospitalized_mod) == "position")] <- 'pos'
+# colnames(Hospitalized_mod)[which(names(Hospitalized_mod) == "ref_base")] <- 'ref'
+# colnames(Hospitalized_mod)[which(names(Hospitalized_mod) == "alt_base")] <- 'mut'
+
 
 
 ## Hospitalized for deletion ====
@@ -110,14 +108,18 @@ Hospitalized_del_mod <- Hospitalized_del_mod %>%
 # [1] "gisaid_epi_isl" "date"           "clade_who"      "status"         "deletion"      
 # [6] "pos"            "endpos"         "chk"            "ref"            "mut" 
 
-# colnames(a)[which(names(a) == "startpos")] <- 'pos'
-colnames(Hospitalized_del_mod)[which(names(Hospitalized_del_mod) == "gisaid_epi_isl")] <- 'sampleID'
+colnames(Hospitalized_del_mod)[which(names(Hospitalized_del_mod) == "startpos")] <- 'pos'
+# colnames(Hospitalized_del_mod)[which(names(Hospitalized_del_mod) == "gisaid_epi_isl")] <- 'sampleID'
 
 
 
 
 ## Hospitalized for insertion ====
-Hospitalized_ins_mod <- Hospitalized %>% .[,c('gisaid_epi_isl', 'insertions','date','clade_who','status')] %>% filter(!is.na(insertions)) %>% unique()
+Hospitalized_ins_mod <- Hospitalized %>% .[,c('gisaid_epi_isl', 'insertions','date','clade_who','status')] %>% filter(!is.na(insertions)) %>% distinct()
+skim(Hospitalized_ins_mod)
+empty_or_na <- is.na(Hospitalized_ins_mod$insertions) | Hospitalized_ins_mod$insertions == ""
+Hospitalized_ins_mod <- Hospitalized_ins_mod[!empty_or_na, ]
+skim(Hospitalized_ins_mod)
 
 # separate insertion positions
 stopifnot(all(!duplicated(Hospitalized_ins_mod$gisaid_epi_isl)))
@@ -138,29 +140,30 @@ Hospitalized_ins_mod <-ddply(Hospitalized_ins_mod,'gisaid_epi_isl',function(X) {
 
 # [1] "gisaid_epi_isl" "date"           "clade_who"      "status"         "insertion"     
 # [6] "pos"            "mut"            "chk"            "ref"  
-colnames(Hospitalized_ins_mod)[which(names(Hospitalized_ins_mod) == "gisaid_epi_isl")] <- 'sampleID'
+# colnames(Hospitalized_ins_mod)[which(names(Hospitalized_ins_mod) == "gisaid_epi_isl")] <- 'sampleID'
 
-sub <- Hospitalized_mod %>% select('sampleID', 'pos', 'ref', 'mut')
-#del <- Hospitalized_del_mod %>% select('sampleID', 'pos', 'ref', 'mut')
-#ins <- Hospitalized_ins_mod %>% select('sampleID', 'pos', 'ref', 'mut')
-#vcf_hospiatlized <- rbind(sub, del, ins) %>% unique()
+sub <- Hospitalized_mod %>% select('gisaid_epi_isl', 'pos', 'ref', 'mut')
+del <- Hospitalized_del_mod %>% select('gisaid_epi_isl', 'pos', 'ref', 'mut')
+ins <- Hospitalized_ins_mod %>% select('gisaid_epi_isl', 'pos', 'ref', 'mut')
+vcf_hospiatlized <- rbind(sub, del, ins) 
 
 
 
 # save RDS
 saveRDS(Hospitalized_mod, '../../../../GISAID/latest_data_set_20230918/output/Hospitalized_mod_sub.rds')
-# saveRDS(Hospitalized_del_mod, './Hospitalized_mod_del.rds')
-# saveRDS(Hospitalized_ins_mod, './Hospitalized_mod_ins.rds')
-# saveRDS(vcf_hospiatlized, '../../../../GISAID/latest_data_set_20230918/output/vcf_hospiatlized.rds')
+saveRDS(Hospitalized_del_mod, '../../../../GISAID/latest_data_set_20230918/output/Hospitalized_mod_del.rds')
+saveRDS(Hospitalized_ins_mod, '../../../../GISAID/latest_data_set_20230918/output/Hospitalized_mod_ins.rds')
+saveRDS(vcf_hospiatlized, '../../../../GISAID/latest_data_set_20230918/output/vcf_hospiatlized.rds')
 # Specify the file path where you want to save the CSV
-file_path <- "../../../../GISAID/latest_data_set_20230918/output/Hospitalized_mod_sub.csv"
+file_path <- "../../../../GISAID/latest_data_set_20230918/output/vcf_hospiatlized.csv"
 # Save data as a CSV file
-write.csv(Hospitalized_mod, file = file_path, row.names = FALSE)
+write.csv(vcf_hospiatlized, file = file_path, row.names = FALSE)
 
 
 # Deceased ====
 ## Deceased for substitutions ====
 Deceased_mod <- Deceased %>% .[,c('gisaid_epi_isl', 'substitutions','date','clade_who','status')] %>% filter(!is.na(substitutions)) %>% unique()
+skim(Deceased_mod)
 stopifnot(all(!duplicated(Deceased_mod$gisaid_epi_isl)))
 Deceased_mod <-ddply(Deceased_mod,'gisaid_epi_isl',function(X) {
   #cat('\n',unique(X$gisaid_epi_isl))
@@ -168,10 +171,10 @@ Deceased_mod <-ddply(Deceased_mod,'gisaid_epi_isl',function(X) {
   substitutions_str <-unlist(strsplit(X$substitutions,split=','))
   d <-data.frame(substitution=substitutions_str,
                  stringsAsFactors = F) %>%
-    mutate(position=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\2",substitution),
-           ref_base=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\1",substitution),
-           alt_base=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\3",substitution)) %>%
-    mutate(chk=substitution==paste0(ref_base,position,alt_base))
+    mutate(pos=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\2",substitution),
+           ref=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\1",substitution),
+           mut=gsub("([ATGC]+)([0-9]+)([A-Z]+)","\\3",substitution)) %>%
+    mutate(chk=substitution==paste0(ref,pos,mut))
   stopifnot(all(d$chk))
   d <-d %>% select(-chk)
   stopifnot(all(!duplicated(d$position)))
@@ -182,16 +185,14 @@ Deceased_mod <-ddply(Deceased_mod,'gisaid_epi_isl',function(X) {
 
 # [1] "gisaid_epi_isl" "date"           "clade_who"      "status"         "substitution"  
 # [6] "position"       "ref_base"       "alt_base"  
-# colnames(Deceased_mod)[which(names(Deceased_mod) == "gisaid_epi_isl")] <- 'sampleID'
-# colnames(Deceased_mod)[which(names(Deceased_mod) == "pos")] <- 'position'
-# colnames(Deceased_mod)[which(names(Deceased_mod) == "ref")] <- 'ref_base'
-# colnames(Deceased_mod)[which(names(Deceased_mod) == "mut")] <- 'alt_base'
-# colnames(Deceased_mod)[which(names(Deceased_mod) == "sampleID")] <- 'gisaid_epi_isl'
-
 
 
 ## Deceased for deletion ====
 Deceased_del_mod <- Deceased %>% .[,c('gisaid_epi_isl', 'deletions','date','clade_who','status')] %>% filter(!is.na(deletions)) %>% unique()
+skim(Deceased_del_mod)
+empty_or_na <- is.na(Deceased_del_mod$deletions) | Deceased_del_mod$deletions == ""
+Deceased_del_mod <- Deceased_del_mod[!empty_or_na, ]
+skim(Deceased_del_mod)
 
 # separate deleted positions
 stopifnot(all(!duplicated(Deceased_del_mod$gisaid_epi_isl)))
@@ -218,14 +219,18 @@ Deceased_del_mod <- Deceased_del_mod %>%
 # [1] "gisaid_epi_isl" "date"           "clade_who"      "status"         "deletion"      
 # [6] "pos"            "endpos"         "chk"            "ref"            "mut" 
 
-# colnames(a)[which(names(a) == "startpos")] <- 'pos'
-colnames(Deceased_del_mod)[which(names(Deceased_del_mod) == "gisaid_epi_isl")] <- 'sampleID'
+colnames(Deceased_del_mod)[which(names(Deceased_del_mod) == "startpos")] <- 'pos'
 
 
 
 
 ## Deceased for insertion ====
 Deceased_ins_mod <- Deceased %>% .[,c('gisaid_epi_isl', 'insertions','date','clade_who','status')] %>% filter(!is.na(insertions)) %>% unique()
+skim(Deceased_ins_mod)
+empty_or_na <- is.na(Deceased_ins_mod$insertions) | Deceased_ins_mod$insertions == ""
+Deceased_ins_mod <- Deceased_ins_mod[!empty_or_na, ]
+skim(Deceased_ins_mod)
+
 
 # separate insertion positions
 stopifnot(all(!duplicated(Deceased_ins_mod$gisaid_epi_isl)))
@@ -246,24 +251,23 @@ Deceased_ins_mod <-ddply(Deceased_ins_mod,'gisaid_epi_isl',function(X) {
 
 # [1] "gisaid_epi_isl" "date"           "clade_who"      "status"         "insertion"     
 # [6] "pos"            "mut"            "chk"            "ref"  
-colnames(Deceased_ins_mod)[which(names(Deceased_ins_mod) == "gisaid_epi_isl")] <- 'sampleID'
 
-sub_d <- Deceased_mod %>% select('sampleID', 'pos', 'ref', 'mut')
-del_d <- Deceased_del_mod %>% select('sampleID', 'pos', 'ref', 'mut')
-ins_d <- Deceased_ins_mod %>% select('sampleID', 'pos', 'ref', 'mut')
-vcf_hospiatlized <- rbind(sub_d, del_d, ins_d) %>% unique()
+sub_d <- Deceased_mod %>% select('gisaid_epi_isl', 'pos', 'ref', 'mut')
+del_d <- Deceased_del_mod %>% select('gisaid_epi_isl', 'pos', 'ref', 'mut')
+ins_d <- Deceased_ins_mod %>% select('gisaid_epi_isl', 'pos', 'ref', 'mut')
+vcf_deceased <- rbind(sub_d, del_d, ins_d) %>% unique()
 
 
 
 # save RDS
 saveRDS(Deceased_mod, '../../../../GISAID/latest_data_set_20230918/output/Deceased_mod_sub.rds')
-# saveRDS(Deceased_del_mod, './Deceased_mod_del.rds')
-# saveRDS(Deceased_ins_mod, './Deceased_mod_ins.rds')
-# saveRDS(vcf_deceased, '../../../../GISAID/latest_data_set_20230918/output/vcf_deceased.rds')
+saveRDS(Deceased_del_mod, '../../../../GISAID/latest_data_set_20230918/output/Deceased_mod_del.rds')
+saveRDS(Deceased_ins_mod, '../../../../GISAID/latest_data_set_20230918/output/Deceased_mod_ins.rds')
+saveRDS(vcf_deceased, '../../../../GISAID/latest_data_set_20230918/output/vcf_deceased.rds')
 # Specify the file path where you want to save the CSV
-file_path <- "../../../../GISAID/latest_data_set_20230918/output/Deceased_mod_sub.csv"
+file_path <- "../../../../GISAID/latest_data_set_20230918/output/vcf_deceased.csv"
 # Save data as a CSV file
-write.csv(Deceased_mod, file = file_path, row.names = FALSE)
+write.csv(vcf_deceased, file = file_path, row.names = FALSE)
 
 
 # 4. dN/dS  =======================================================================
@@ -273,20 +277,22 @@ write.csv(Deceased_mod, file = file_path, row.names = FALSE)
 # Using dNdScv in SARS-Cov-2
 load('RefCDS_MN908947.3.peptides.rda'); print(RefCDS[[6]])
 
+colnames(vcf_deceased)[which(names(vcf_deceased) == "gisaid_epi_isl")] <- 'sampleID'
+colnames(vcf_hospiatlized)[which(names(vcf_hospiatlized) == "gisaid_epi_isl")] <- 'sampleID'
+skim(vcf_deceased)
+skim(vcf_hospiatlized)
+
+
 ## a) Make input file list for dN/dS ======
 # Deceased, set the data set into input data for dnds
-Deceased_dnds_input <- Deceased_mod %>% 
-  select(gisaid_epi_isl, position, ref_base, alt_base, date) %>% 
+Deceased_dnds_input <- vcf_deceased %>% 
   mutate(chr='MN908947.3') %>% unique()
-Deceased_dnds_input <- Deceased_dnds_input %>% select(gisaid_epi_isl, chr, position, ref_base, alt_base, date)
-colnames(Deceased_dnds_input) <- c('sampleID', 'chr', 'pos', 'ref', 'mut', 'date')
+Deceased_dnds_input <- Deceased_dnds_input %>% select('sampleID', 'chr', 'pos', 'ref', 'mut')
 
 # Hospitalized, set the data set into input data for dnds
-Hospitalized_dnds_input <- Hospitalized_mod %>% 
-  select(gisaid_epi_isl, position, ref_base, alt_base, date) %>% 
+Hospitalized_dnds_input <- vcf_hospiatlized %>% 
   mutate(chr='MN908947.3') %>% unique()
-Hospitalized_dnds_input <- Hospitalized_dnds_input %>% select(gisaid_epi_isl, chr, position, ref_base, alt_base, date)
-colnames(Hospitalized_dnds_input) <- c('sampleID', 'chr', 'pos', 'ref', 'mut', 'date')
+Hospitalized_dnds_input <- Hospitalized_dnds_input %>% select('sampleID', 'chr', 'pos', 'ref', 'mut')
 
 # all of both status
 blind_dnds_input <- rbind(Deceased_dnds_input, Hospitalized_dnds_input)
@@ -310,4 +316,25 @@ saveRDS(Deceased_dndsout, '../../../../GISAID/latest_data_set_20230918/Deceased_
 saveRDS(Hospitalized_dndsout, '../../../../GISAID/latest_data_set_20230918/Hospitalized_dndsout.rds')
 saveRDS(blind_dndsout, '../../../../GISAID/latest_data_set_20230918/blind_dndsout.rds')
 
+saveRDS(d_anotmuts, '../../../../GISAID/latest_data_set_20230918/Deceased_anotmuts.rds')
+saveRDS(h_anotmuts, '../../../../GISAID/latest_data_set_20230918/Hospitalized_anotmuts.rds')
+saveRDS(b_anotmuts, '../../../../GISAID/latest_data_set_20230918/blind_anotmuts.rds')
+
+dim(d_anotmuts); dim(h_anotmuts) ; dim(b_anotmuts)
+d_anotmuts$sampleID %>% unique() %>% length()
+h_anotmuts$sampleID %>% unique() %>% length()
+
+
+write.csv(d_anotmuts, '../../../../GISAID/latest_data_set_20230918/Deceased_anotmuts.csv', row.names = FALSE)
+write.csv(h_anotmuts, '../../../../GISAID/latest_data_set_20230918/Hospitalized_anotmuts.csv', row.names = FALSE)
+write.csv(b_anotmuts, '../../../../GISAID/latest_data_set_20230918/blind_anotmuts.csv', row.names = FALSE)
+
+
+
+
+
+# library("dndscv")
+# data("dataset_simbreast", package="dndscv")
+# dndsout = dndscv(mutations)
+# head(mutations)
 
